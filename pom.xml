@@ -12,6 +12,8 @@
 		<nd4j.version>1.0.0-beta2</nd4j.version>
 		<dl4j.version>1.0.0-beta2</dl4j.version>
 		<jcommander.version>1.72</jcommander.version>
+		<slf4j_simple.version>1.7.25</slf4j_simple.version>
+		<junit.version>4.12</junit.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -40,6 +42,18 @@
 			<groupId>com.beust</groupId>
 			<artifactId>jcommander</artifactId>
 			<version>${jcommander.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j_simple.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
 		</dependency>
 
 	</dependencies>

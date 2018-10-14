@@ -2,7 +2,6 @@ package perf.cfg.dl4jfacenet.model;
 
 import static org.deeplearning4j.nn.conf.ConvolutionMode.Truncate;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -30,16 +29,12 @@ import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.activations.impl.ActivationIdentity;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 
 import perf.cfg.dl4jfacenet.model.custom.ActivationLinear;
 import perf.cfg.dl4jfacenet.model.custom.ActivationReverse;
 
-public class InceptionResNetV1 {
-	private ComputationGraph graph;
-	private long[] inputShape = new long[] { 160, 160, 3 };
+public class InceptionResNetV1 extends AbstractModel {
+	private long[] inputShape;
 
 	public InceptionResNetV1(long... inputShape) throws Exception {
 		this.inputShape = inputShape;
@@ -47,14 +42,11 @@ public class InceptionResNetV1 {
 	}
 
 	public InceptionResNetV1() throws Exception {
-		init();
-	}
-	
-	public ComputationGraph getGraph(){
-		return graph;
+		this(new long[] { 160, 160, 3 });
 	}
 
-	private void init() throws Exception {
+
+	protected ComputationGraph graph() throws Exception {
 		String input = "input";
 		GraphBuilder builder = new NeuralNetConfiguration.Builder().graphBuilder().addInputs(input)
 				.setInputTypes(InputType.convolutional(inputShape[0], inputShape[1], inputShape[2]));
@@ -87,11 +79,12 @@ public class InceptionResNetV1 {
 		helper.addLayerBehind("logits", defDense(44052).hasBias(true));
 		helper.addVertex("embeddings", new L2NormalizeVertex(new int[] { 1 }, 1e-10), 0, toActName("Bottleneck"));
 		builder.setOutputs("logits", "embeddings");
-		graph = new ComputationGraph(builder.build());
+		ComputationGraph graph = new ComputationGraph(builder.build());
 		graph.init();
+		return graph;
 	}
 	
-	private static class MultiResouceInputStream{
+	private static class MultiResouceInputStream extends InputStream {
 		private String resourceName;
 		private InputStream in = null;
 		private int currIndex = 0;
@@ -133,34 +126,11 @@ public class InceptionResNetV1 {
 				in.close();
 			}
 		}
-	}
 
-	public void loadWeightData() throws IOException {
-		org.deeplearning4j.nn.api.Layer[] layers = graph.getLayers();
-		MultiResouceInputStream fis = new MultiResouceInputStream("InceptionResNetV1Data");
-		byte[] buf = new byte[4];
-		try{
-			for (org.deeplearning4j.nn.api.Layer l:layers) {
-				int nParams = l.numParams();
-				if(nParams == 0) continue;
-				float[] data = new float[nParams];
-				for(int i = 0;i < nParams;i++){
-					fis.read(buf);
-					data[i] = bytes2Float(buf);
-				}
-				l.setParams(Nd4j.create(data));
-			}
-		} finally {
-			fis.close();
+		@Override
+		public int read() throws IOException {
+			throw new RuntimeException("invalid operation");
 		}
-	}
-
-	public static float bytes2Float(byte[] arr) {
-		int value = 0;
-		for (int i = 0; i < 4; i++) {
-			value |= ((int) (arr[i] & 0xff)) << (8 * i);
-		}
-		return Float.intBitsToFloat(value);
 	}
 
 	private static String nameLayer(String original, String i) {
@@ -385,12 +355,12 @@ public class InceptionResNetV1 {
 			layerConfMap.put(vertexName, new LayerConf(vertexName, nOut, vertexInputs));
 		}
 
-		void addVertexBehind(String vertexName, GraphVertex vertex, int nOut, String... vertexInputs) {
-			if (lastLayer == null) {
-				throw new RuntimeException("no last layer");
-			}
-			addVertex(vertexName, vertex, nOut, lastLayer);
-		}
+//		void addVertexBehind(String vertexName, GraphVertex vertex, int nOut, String... vertexInputs) {
+//			if (lastLayer == null) {
+//				throw new RuntimeException("no last layer");
+//			}
+//			addVertex(vertexName, vertex, nOut, lastLayer);
+//		}
 	}
 
 	private static class LayerConf {
@@ -402,5 +372,10 @@ public class InceptionResNetV1 {
 			this.nOut = nOut;
 			this.input = input;
 		}
+	}
+
+	@Override
+	protected InputStream getModelDataInputStream() throws IOException {
+		return new MultiResouceInputStream("InceptionResNetV1Data");
 	}
 }
