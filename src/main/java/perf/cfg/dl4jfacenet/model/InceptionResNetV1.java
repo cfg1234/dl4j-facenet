@@ -29,6 +29,7 @@ import org.deeplearning4j.nn.conf.layers.SubsamplingLayer;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 import perf.cfg.dl4jfacenet.model.custom.ActivationLinear;
 import perf.cfg.dl4jfacenet.model.custom.ActivationReverse;
@@ -82,6 +83,13 @@ public class InceptionResNetV1 extends AbstractModel {
 		ComputationGraph graph = new ComputationGraph(builder.build());
 		graph.init();
 		return graph;
+	}
+	
+	public static INDArray prewhiten(INDArray x){
+		double mean = x.mean().getDouble(0);
+		double std = x.std().getDouble(0);
+		double stdAdj = Math.max(std, 1.0/Math.sqrt(x.length()));
+		return x.sub(mean).mul(1/stdAdj);
 	}
 	
 	private static class MultiResouceInputStream extends InputStream {

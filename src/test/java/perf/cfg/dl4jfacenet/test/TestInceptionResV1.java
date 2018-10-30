@@ -24,6 +24,7 @@ import perf.cfg.dl4jfacenet.model.InceptionResNetV1;
 public class TestInceptionResV1 {
 	
 	private static ComputationGraph graph;
+	private static NativeImageLoader imageLoader = new NativeImageLoader();
 
 	/**
 	 * @throws java.lang.Exception
@@ -48,21 +49,14 @@ public class TestInceptionResV1 {
 		assertAllowLoss("Embeddings mean", ALLOW_LOSS, Math.abs(0.0041296408 - res[1].mean().getDouble(0)));
 	}
 	
-	private static INDArray prewhiten(INDArray x){
-		double mean = x.mean().getDouble(0);
-		double std = x.std().getDouble(0);
-		double stdAdj = Math.max(std, 1.0/Math.sqrt(x.length()));
-		return x.sub(mean).mul(1/stdAdj);
-	}
-	
 	@Test
 	public void imgTest() throws IOException {
-		NativeImageLoader imageLoader = new NativeImageLoader();
-		INDArray img1_0 = prewhiten(imageLoader.asMatrix(Thread.currentThread().getContextClassLoader()
+		
+		INDArray img1_0 = InceptionResNetV1.prewhiten(imageLoader.asMatrix(Thread.currentThread().getContextClassLoader()
 				.getResourceAsStream("1_0.png"))),
-				img1_1 = prewhiten(imageLoader.asMatrix(Thread.currentThread().getContextClassLoader()
+				img1_1 = InceptionResNetV1.prewhiten(imageLoader.asMatrix(Thread.currentThread().getContextClassLoader()
 						.getResourceAsStream("1_1.png"))),
-				img2 = prewhiten(imageLoader.asMatrix(Thread.currentThread().getContextClassLoader()
+				img2 = InceptionResNetV1.prewhiten(imageLoader.asMatrix(Thread.currentThread().getContextClassLoader()
 						.getResourceAsStream("2.png")));
 		INDArray factor1_0 = graph.output(img1_0)[1];
 		INDArray factor1_1 = graph.output(img1_1)[1];
