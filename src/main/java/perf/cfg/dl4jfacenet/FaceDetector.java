@@ -409,15 +409,7 @@ public class FaceDetector {
 	}
 
 	private INDArray transposeBorder(INDArray arr) {
-		long[] shape = shape(arr);
-		INDArray ret = Nd4j.create(new long[] { shape[0], shape[1], shape[3], shape[2] });
-		for (int i = 0; i < shape[0]; i++) {
-			for (int j = 0; j < shape[1]; j++) {
-				INDArrayIndex[] idx = new INDArrayIndex[] { point(i), point(j), all(), all() };
-				ret.put(idx, arr.get(idx).transposei());
-			}
-		}
-		return ret;
+		return arr.permutei(0,1,3,2);
 	}
 
 	private INDArray scaleAndNorm(INDArray img, double scale) {

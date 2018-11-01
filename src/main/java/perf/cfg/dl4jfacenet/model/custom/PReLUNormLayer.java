@@ -10,6 +10,7 @@ import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
 import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.activations.impl.ActivationPReLU;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.indexing.INDArrayIndex;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.primitives.Pair;
@@ -54,18 +55,13 @@ public class PReLUNormLayer extends BaseLayer<PReLUNorm> {
 
 	private INDArray activate(INDArray in, IActivation activation, boolean training) {
 		long inshape[] = in.shape();
-		for(int i = 0;i < inshape[0];i++) {
-			for(int j = 0;j < inshape[2];j++) {
-				for(int k = 0;k < inshape[3];k++) {
-					INDArrayIndex[] idx = new INDArrayIndex[] {
-							NDArrayIndex.point(i), NDArrayIndex.all(),
-							NDArrayIndex.point(j), NDArrayIndex.point(k)
-					};
-					in.put(idx, activation.getActivation(in.get(idx).transposei(), training));
-				}
-			}
-		}
-		return in;
+		INDArray tmp = Shape.newShapeNoCopy(in.permutei(0,2,3,1), new long[] {
+				inshape[0]*inshape[2]*inshape[3], inshape[1]
+		}, false);
+		tmp = activation.getActivation(tmp, training);
+		return Shape.newShapeNoCopy(tmp, new long[] {
+				inshape[0], inshape[2], inshape[3], inshape[1]
+		}, false).permutei(0,3,1,2);
 	}
 
 	@Override
